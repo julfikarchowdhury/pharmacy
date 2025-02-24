@@ -15,6 +15,14 @@ class MedicineResource extends JsonResource
     public function toArray($request): array
     {
         $lang = $request->get('lang', 'en');
+
+        if (str_contains(request()->path(), 'phamracies-medicines')) {
+            return [
+                'id' => $this->id,
+                'name' => $lang === 'bn' ? $this->name_bn : $this->name_en,
+                'unit' => UnitResource::collection($this->units)
+            ];
+        }
         return [
             'id' => $this->id,
             'name' => $lang === 'bn' ? $this->name_bn : $this->name_en,

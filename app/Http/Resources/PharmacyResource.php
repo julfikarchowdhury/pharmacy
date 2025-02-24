@@ -19,7 +19,7 @@ class PharmacyResource extends JsonResource
             return [
                 'id' => $this->id,
                 'name' => $this->name,
-                'logo' => $this->logo,
+                'logo' => $this->logo ? asset($this->logo) : null,
                 'address' => $this->address,
             ];
         }

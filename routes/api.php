@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CommonAuthController;
 use App\Http\Controllers\Api\GeneralController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\Pharmacy\ManagePharmacyController;
+use App\Http\Controllers\Api\Pharmacy\PharmacyOrderController;
 use App\Http\Controllers\Api\Pharmacy\PharmacyAuthController;
 use App\Http\Controllers\Api\User\OrderController;
 use App\Http\Controllers\Api\User\UserAuthController;
@@ -86,5 +87,13 @@ Route::middleware(['auth:sanctum', 'role:pharmacy_owner'])->group(function () {
 
     //get medicine that are not inside the pharmacy 
     Route::get('/get-medicine-for-pharmacy/{pharmacy}', [ManagePharmacyController::class, 'getMedicinesNotSynced']);
+
+    Route::get('/all-orders/{type}', [PharmacyOrderController::class, 'allOrders']);
+    Route::get('/order-details/{order}', [PharmacyOrderController::class, 'orderDetails']);
+    Route::post('/update-status-order/{order}', [PharmacyOrderController::class, 'updateStatus']);
+    Route::post('/accept-reject-medicine-of-order/{orderDetail}', [PharmacyOrderController::class, 'acceptRejectMedicineOfOrder']);
+
+    Route::get('/phamracies-medicines', [PharmacyOrderController::class, 'getMedicinesByPharmacy']);
+
 
 });

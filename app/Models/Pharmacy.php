@@ -15,7 +15,7 @@ class Pharmacy extends Model
     public function medicines()
     {
         return $this->belongsToMany(Medicine::class, 'pharmacy_medicines')
-            ->withPivot('discount_percentage') // This adds the discount_percentage column from the pivot table
+            ->withPivot('discount_percentage')
             ->withTimestamps();
     }
 }

@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->string('tracking_id')->unique();
+            $table->enum('order_type', ['manual', 'direct'])->default('direct');
             $table->foreignId('customer_id')->constrained('users')->restrictOnDelete();
             $table->foreignId('pharmacy_id')->constrained('pharmacies')->restrictOnDelete();
             $table->decimal('total', 10, 2);
@@ -35,8 +36,10 @@ return new class extends Migration {
             $table->double('pharmacy_discount');
             $table->double('tax');
             $table->timestamp('date');
-            $table->enum('payment_type', ['cod', 'bkash','nagad'])->default('cod');
+            $table->enum('payment_type', ['cod', 'bkash', 'nagad'])->default('cod');
             $table->enum('payment_status', ['paid', 'due'])->default('due');
+            $table->text('note')->nullable();
+            $table->string('prescription')->nullable();
             $table->timestamps();
         });
     }

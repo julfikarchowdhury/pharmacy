@@ -41,7 +41,7 @@ class GeneralController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'All pharmacies retrieved successfully.',
-            'data' => PharmacyResource::collection(Pharmacy::get())
+            'pharmacies' => PharmacyResource::collection(Pharmacy::get())
         ]);
     }
     

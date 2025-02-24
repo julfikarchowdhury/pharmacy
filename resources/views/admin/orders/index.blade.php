@@ -21,7 +21,14 @@
         </div>
         <div class="card-body">
             <div class="row mb-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
+                    <select id="orderType" class="form-control">
+                        <option value="">All Order</option>
+                        <option value="manual">Manaul Order</option>
+                        <option value="direct">Direct Order</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
                     <select id="pharmacyFilter" class="form-control">
                         <option value="">All Pharmacies</option>
                         @foreach ($pharmacies as $pharmacy)
@@ -29,7 +36,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <select id="statusFilter" class="form-control">
                         <option value="">All Statuses</option>
                         <option value="order_placed">Order Placed</option>
@@ -77,6 +84,7 @@
                         data: function (d) {
                             d.pharmacy_id = $('#pharmacyFilter').val();
                             d.status = $('#statusFilter').val();
+                            d.order_type = $('#orderType').val();
                         }
                     },
                     columns: [
@@ -118,7 +126,12 @@
                     $(this).val(prevStatus);
                     return;
                 }
-
+                if (selectedStatus === 'store_accepts' ||
+                    selectedStatus === 'store_rejects' || selectedStatus === 'ready_for_rider') {
+                    Swal.fire('Unauthorized Action!', 'Only store can add update this status.', 'error');
+                    $(this).val(prevStatus);
+                    return;
+                }
                 // Check if the selected status is allowed based on the current status
                 if (!allowedTransitions[prevStatus].includes(selectedStatus) && selectedStatus !== 'canceled') {
                     Swal.fire('Invalid Transition!', 'You can\'t skip to this status. Please follow the correct order.', 'error');
@@ -200,8 +213,6 @@
                     }
                 });
             }
-
-
         });
 
         function deleteOrder(orderId) {

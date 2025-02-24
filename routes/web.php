@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\Medicine\MedicineCompanyController;
 use App\Http\Controllers\Admin\Medicine\MedicineController;
 use App\Http\Controllers\Admin\Medicine\MedicineGenericController;
 use App\Http\Controllers\Admin\Medicine\UnitController;
-use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\Orders\OrderController;
 use App\Http\Controllers\Admin\Orders\ManualOrderController;
 use App\Http\Controllers\Admin\PharmacyController;
 use App\Http\Controllers\Admin\TipController;

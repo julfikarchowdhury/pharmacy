@@ -22,6 +22,13 @@ class MedicineDetailsResource extends JsonResource
             'concentration' => $this->concentration->value,
             'strip_price' => $this->strip_price ?? null,
             'unit_price' => $this->unit_price,
+            'discounted_strip_price' => isset($this->pharmacies[0]) && !is_null($this->pharmacies[0]->pivot->discount_percentage) && !is_null($this->strip_price)
+                ? round($this->strip_price * (1 - $this->pharmacies[0]->pivot->discount_percentage / 100), 2)
+                : null,
+            'discounted_unit_price' => isset($this->pharmacies[0]) && !is_null($this->pharmacies[0]->pivot->discount_percentage) && !is_null($this->unit_price)
+                ? round($this->unit_price * (1 - $this->pharmacies[0]->pivot->discount_percentage / 100), 2)
+                : null,
+
             'images' => $this->images->map(function ($image) {
                 return asset($image->src);
             }),
@@ -29,7 +36,10 @@ class MedicineDetailsResource extends JsonResource
             'category' => $lang === 'bn' ? $this->category->name_bn : $this->category->name_en,
             'company' => $lang === 'bn' ? $this->company->name_bn : $this->company->name_en,
             'units' => $this->units->map(function ($unit, $lang) {
-                return $lang === 'bn' ? $unit->value_bn : $unit->value_en;
+                return [
+                    'id' => $unit->id,
+                    'value' => $lang === 'bn' ? $unit->value_bn : $unit->value_en,
+                ];
             }),
         ];
     }

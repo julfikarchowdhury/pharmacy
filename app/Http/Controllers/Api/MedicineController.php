@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class MedicineController extends Controller
-{    use ImageHelper;
+{
+    use ImageHelper;
 
     public function allMedicines(Request $request)
     {
@@ -37,7 +38,7 @@ class MedicineController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Medicines retrieved successfully',
-            'data' => MedicineResource::collection($medicines->items()),
+            'medicines' => MedicineResource::collection($medicines->items()),
             'pagination' => $this->paginateData($medicines)
         ]);
     }
@@ -55,7 +56,7 @@ class MedicineController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Pharmacies retrieved successfully',
-            'data' => PharmacyResource::collection($pharmacies->items()),
+            'pharmacies' => PharmacyResource::collection($pharmacies->items()),
             'pagination' => $this->paginateData($pharmacies)
         ]);
     }
@@ -83,8 +84,12 @@ class MedicineController extends Controller
             'images',
             'units',
             'concentration',
+            'pharmacies' => function ($query) use ($pharmacy) {
+                $query->where('pharmacy_id', $pharmacy->id)
+                    ->withPivot('discount_percentage'); // Load the discount_percentage field from the pivot table
+            }
         ]);
-
+   
         $relatedMedicines = Medicine::where('medicine_company_id', $medicine->medicine_company_id)
             ->where('medicine_generic_id', $medicine->medicine_generic_id)
             ->where('concentration_id', '!=', $medicine->concentration_id)
@@ -101,12 +106,13 @@ class MedicineController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Medicine details retrieved successfully.',
-            'data' => [
-                'medicine_details' => new MedicineDetailsResource($medicineDetails),
+            'medicine_details' => [
+                'medicine' => new MedicineDetailsResource($medicineDetails),
                 'related_concentrations' => $relatedConcentrations,
             ]
         ]);
     }
+
 
     public function addDrugRequest(MedicineRequest $request)
     {

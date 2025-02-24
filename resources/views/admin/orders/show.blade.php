@@ -35,7 +35,30 @@
                     <p>Address: {{ $order->pharmacy->address }}</p>
                 </div>
             </div>
-
+            @if($order->order_type == 'manual')
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Note:</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>{{ $order->note }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Preacription:</h5>
+                            </div>
+                            <div class="card-body">
+                                <img src="{{asset($order->prescription)}}" alt="">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
             <h5 class="mt-4 font-weight-bold">Order Items</h5>
 
             <table class="table table-bordered">
@@ -117,10 +140,21 @@
                 'ready_for_rider': ['rider_assigned'],
                 'rider_assigned': ['out_for_delivery'],
                 'out_for_delivery': ['delivered'],
-                'delivered': [],  // No further transitions allowed after delivered
-                'canceled': []    // Can be canceled at any time
+                'delivered': [],
+                'canceled': []
             };
-
+            if ((prevStatus === 'delivered' && selectedStatus === 'canceled') ||
+                (prevStatus === 'canceled' && selectedStatus === 'delivered')) {
+                Swal.fire('Invalid Action!', 'You cannot change a delivered or canceled order.', 'error');
+                $(this).val(prevStatus);
+                return;
+            }
+            if (selectedStatus === 'store_accepts' ||
+                selectedStatus === 'store_rejects' || selectedStatus === 'ready_for_rider') {
+                Swal.fire('Unauthorized Action!', 'Only store can add update this status.', 'error');
+                $(this).val(prevStatus);
+                return;
+            }
             // Check if the selected status is allowed based on the current status
             if (!allowedTransitions[prevStatus].includes(selectedStatus) && selectedStatus !== 'canceled') {
                 Swal.fire('Invalid Transition!', 'You can\'t skip to this status. Please follow the correct order.', 'error');

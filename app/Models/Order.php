@@ -10,6 +10,7 @@ class Order extends Model
     use HasFactory;
     protected $fillable = [
         'tracking_id',
+        'order_type',
         'customer_id',
         'pharmacy_id',
         'total',
@@ -24,7 +25,9 @@ class Order extends Model
         'status',
         'date',
         'payment_type',
-        'payment_status'
+        'payment_status',
+        'note',
+        'prescription'
     ];
     /**
      * Relationship: An Order belongs to a Customer (User)

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Admin\Orders;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
@@ -9,6 +9,7 @@ use App\Traits\HandlesDeleteExceptions;
 use App\Traits\PushNotification;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -21,6 +22,9 @@ class OrderController extends Controller
         if ($request->ajax()) {
 
             $orders = Order::with(['customer', 'pharmacy']);
+            if ($request->filled('order_type')) {
+                $orders->where('order_type', $request->order_type);
+            }
             if ($request->filled('pharmacy_id')) {
                 $orders->where('pharmacy_id', $request->pharmacy_id);
             }
@@ -96,7 +100,7 @@ class OrderController extends Controller
         }
 
         $pharmacies = Pharmacy::all();
-        return view('admin.orders.direct.index', compact('pharmacies'));
+        return view('admin.orders.index', compact('pharmacies'));
     }
     public function show(Order $order)
     {
@@ -112,24 +116,15 @@ class OrderController extends Controller
             'canceled' => 'Canceled',
         ];
 
-        return view('admin.orders.direct.show', compact('order', 'statuses'));
+        return view('admin.orders.show', compact('order', 'statuses'));
     }
-
-    // public function destroy(Order $order)
-    // {
-    //     return $this->handleDelete(
-    //         function () use ($order) {
-    //             $order->delete();
-    //         },
-    //         'Order',
-    //     );
-    // }
 
 
 
     public function changeStatus(Order $order, Request $request)
     {
         try {
+            DB::beginTransaction();
             // Prevent delivered orders from being canceled and vice versa
             if (
                 ($order->status === 'delivered' && $request->status === 'canceled') ||
@@ -144,18 +139,21 @@ class OrderController extends Controller
             // Update the order status
             $order->update(['status' => $request->status]);
 
+            $this->logOrderStatus($order);
+
             // Send push notification to user
             $this->sendOrderStatusNotification(
                 $order->customer_id,
                 $order->status,
                 $order->id
             );
-
+            DB::commit();
             return response()->json([
                 'success' => true,
                 'message' => 'Order status updated successfully.'
             ]);
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error('Error updating order status: ' . $e->getMessage());
 
             return response()->json([
@@ -184,7 +182,15 @@ class OrderController extends Controller
         }
     }
 
-
+    // public function destroy(Order $order)
+    // {
+    //     return $this->handleDelete(
+    //         function () use ($order) {
+    //             $order->delete();
+    //         },
+    //         'Order',
+    //     );
+    // }
 
 
 

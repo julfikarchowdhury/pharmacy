@@ -23,38 +23,52 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
+            if ($request->hasFile('prescription')) {
+                $prescriptionPath = $this->saveNewImage(
+                    $request->file('prescription'),
+                    'order_prescriptions'
+                );
+            }
             // Save the order
             $order = Order::create([
                 'tracking_id' => rand(),
+                'order_type' => $request->order_type,
                 'customer_id' => $request->customer_id,
-                'total' => $request->total,
-                'sub_total' => $request->sub_total,
+                'total' => $request->total ?? 0,
+                'sub_total' => $request->sub_total ?? 0,
                 'delivery_address' => $request->delivery_address,
                 'delivery_lat' => $request->delivery_lat,
                 'delivery_long' => $request->delivery_long,
                 'status' => 'order_placed',
                 'date' => $request->date,
                 'pharmacy_id' => $request->pharmacy_id,
-                'discount_by_points' => $request->discount_by_points,
-                'pharmacy_discount' => $request->pharmacy_discount,
-                'delivery_charge' => $request->delivery_charge,
-                'tax' => $request->tax,
-                'payment_type' => $request->payment_type,
-                'payment_status' => 'due'
+                'discount_by_points' => $request->discount_by_points ?? 0,
+                'pharmacy_discount' => $request->pharmacy_discount ?? 0,
+                'delivery_charge' => $request->delivery_charge ?? 0,
+                'tax' => $request->tax ?? 0,
+                'payment_type' => $request->payment_type ?? 'cod',
+                'payment_status' => 'due',
+                'note' => $request->note,
+                'prescription' => $prescriptionPath ?? null
             ]);
 
             // Save the order details
-            foreach ($request->order_details as $detail) {
-                OrderDetail::create([
-                    'order_id' => $order->id,
-                    'medicine_id' => $detail['medicine_id'],
-                    'unit_id' => $detail['unit_id'],
-                    'qty' => $detail['qty'],
-                    'price' => $detail['price'],
-                    'discounted_price' => $detail['discounted_price'],
-                    'status' => 'pending',
-                ]);
+            if ($request->order_details) {
+                foreach ($request->order_details as $detail) {
+                    OrderDetail::create([
+                        'order_id' => $order->id,
+                        'medicine_id' => $detail['medicine_id'],
+                        'unit_id' => $detail['unit_id'],
+                        'qty' => $detail['qty'],
+                        'price' => $detail['price'],
+                        'discounted_price' => $detail['discounted_price'],
+                        'status' => 'pending',
+                    ]);
+                }
             }
+
+            $this->logOrderStatus($order);
+
             $this->sendOrderNotificationToPharmacy(
                 $request->pharmacy_id,
                 $order->tracking_id,
@@ -76,53 +90,6 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to save order.'
-            ], 500);
-        }
-    }
-
-    public function placeManualOrder(Request $request)
-    {
-        $request->validate([
-            'customer_id' => 'required|exists:users,id',
-            'pharmacy_id' => 'required|exists:pharmacies,id',
-            'note' => 'nullable|string',
-            'prescription' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $prescriptionPath = null;
-            if ($request->hasFile('prescription')) {
-                $prescriptionPath = $this->saveNewImage(
-                    $request->file('prescription'),
-                    'prescriptions'
-                );
-
-            }
-            $order = ManualOrder::create([
-                'user_id' => $request->customer_id,
-                'pharmacy_id' => $request->pharmacy_id,
-                'note' => $request->note,
-                'prescription' => $prescriptionPath,
-                'status' => 'order_placed',
-
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Manual order placed successfully!',
-                'order_id' => $order->id,
-            ]);
-        } catch (Exception $e) {
-            DB::rollBack();
-            Log::error('Manual order failed: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to place manual order.'
             ], 500);
         }
     }
