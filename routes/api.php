@@ -65,6 +65,7 @@ Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
 
     //not complete
     Route::post('/add-drug-request', [MedicineController::class, 'addDrugRequest']);
+    Route::get('/add-drug-dropdown-data', [MedicineController::class, 'addDrugDropdownData']);
 
 });
 

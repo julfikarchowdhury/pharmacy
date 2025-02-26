@@ -7,8 +7,13 @@ use App\Http\Requests\MedicineRequest;
 use App\Http\Resources\MedicineDetailsResource;
 use App\Http\Resources\MedicineResource;
 use App\Http\Resources\PharmacyResource;
+use App\Models\Category;
+use App\Models\Concentration;
 use App\Models\Medicine;
+use App\Models\MedicineCompany;
+use App\Models\MedicineGeneric;
 use App\Models\Pharmacy;
+use App\Models\Unit;
 use App\Traits\ImageHelper;
 use Exception;
 use Illuminate\Http\Request;
@@ -151,4 +156,17 @@ class MedicineController extends Controller
         }
     }
 
+    public function addDrugDropdownData()
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Pharmacies retrieved successfully',
+            'concentrations' => Concentration::get(['id', 'value'])->map(fn($item) => ['id' => $item->id, 'value' => $item->value]),
+            'medicine_companies' => MedicineCompany::get(['id', 'name_en'])->map(fn($item) => ['id' => $item->id, 'value' => $item->name_en]),
+            'generics' => MedicineGeneric::get(['id', 'title_en'])->map(fn($item) => ['id' => $item->id, 'value' => $item->title_en]),
+            'units' => Unit::get(['id', 'value_en'])->map(fn($item) => ['id' => $item->id, 'value' => $item->value_en]),
+            'categories' => Category::where('status', 'active')->get(['id', 'name_en'])->map(fn($item) => ['id' => $item->id, 'value' => $item->name_en]),
+        ]);
+
+    }
 }

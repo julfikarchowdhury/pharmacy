@@ -8,5 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class MedicineGeneric extends Model
 {
     use HasFactory;
-    protected $fillable = ['title_en', 'title_bn'];
+    protected $fillable = [
+        'title_en',
+        'title_bn'
+    ];
 }

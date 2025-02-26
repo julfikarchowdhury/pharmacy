@@ -23,33 +23,23 @@ class MedicineRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-
     public function rules(): array
     {
         $medicineId = $this->medicine?->id;
         $removedImage = empty(json_decode($this->removed_images));
 
         return [
-            'user_id' => 'required|exists:users,id',
             'name_en' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('medicines', 'name_en')
-                    ->where('medicine_company_id', $this->medicine_company_id)
-                    ->where('medicine_generic_id', $this->medicine_generic_id)
-                    ->where('concentration_id', $this->concentration_id)
-                    ->ignore($medicineId)
+                Rule::unique('medicines', 'name_en')->ignore($medicineId)
             ],
             'name_bn' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('medicines', 'name_bn')
-                    ->where('medicine_company_id', $this->medicine_company_id)
-                    ->where('medicine_generic_id', $this->medicine_generic_id)
-                    ->where('concentration_id', $this->concentration_id)
-                    ->ignore($medicineId)
+                Rule::unique('medicines', 'name_bn')->ignore($medicineId)
             ],
             'description_en' => 'required|string',
             'description_bn' => 'required|string',
@@ -64,8 +54,22 @@ class MedicineRequest extends FormRequest
             'images.*' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'units' => 'required|array',
             'units.*' => 'required|exists:units,id',
+
+            // Unique combination of company, generic, and concentration
+            'concentration_id' => [
+                'required',
+                Rule::unique('medicines')
+                    ->where(
+                        fn($query) => $query
+                            ->where('medicine_company_id', $this->input('medicine_company_id'))
+                            ->where('medicine_generic_id', $this->input('medicine_generic_id'))
+                            ->where('concentration_id', $this->input('concentration_id'))
+                    )
+                    ->ignore($medicineId)
+            ],
         ];
     }
+
 
     public function messages(): array
     {
@@ -80,6 +84,7 @@ class MedicineRequest extends FormRequest
             'image' => 'The :attribute must be an image.',
             'array' => 'The :attribute must be an array.',
             'in' => 'The :attribute must be one of the following values: :values.',
+            'concentration_id.unique' => 'A medicine with the same company, generic, and concentration already exists.',
         ];
     }
 
