@@ -33,6 +33,8 @@ class DashboardController extends Controller
             $settings->currency_code = $validated['currency_code'];
             $settings->currency_icon = $validated['currency_icon'];
             $settings->points_conversion = $validated['points_conversion'] ?? $settings->points_conversion;
+            $settings->delivery_charge_rate = $validated['delivery_charge_rate'] ?? $settings->delivery_charge_rate;
+            $settings->tax_percentage = $validated['tax_percentage'] ?? $settings->tax_percentage;
 
             if ($request->hasFile('logo')) {
                 $settings->logo = $this->updateImage(

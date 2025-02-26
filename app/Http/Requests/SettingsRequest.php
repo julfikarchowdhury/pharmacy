@@ -27,6 +27,8 @@ class SettingsRequest extends FormRequest
             'currency_code' => 'required|string|max:3',
             'currency_icon' => 'nullable|string|max:255',
             'points_conversion' => 'required|numeric',
+            'delivery_charge_rate' => 'required|numeric',
+            'tax_percentage' => 'required|numeric'
         ];
     }
     /**
@@ -47,6 +49,10 @@ class SettingsRequest extends FormRequest
             'currency_icon.max' => 'The currency icon must not exceed 255 characters.',
             'points_conversion.required' => 'The point conversion rate is required.',
             'points_conversion.numeric' => 'The point conversion rate must be a valid number.',
+            'delivery_charge_rate.required' => 'The delivery cahrge rate is required.',
+            'delivery_charge_rate.numeric' => 'The delivery cahrge rate must be a valid number.',
+            'tax_percentage.required' => 'The delivery cahrge rate is required.',
+            'tax_percentage.numeric' => 'The delivery cahrge rate must be a valid number.',
         ];
     }
 }

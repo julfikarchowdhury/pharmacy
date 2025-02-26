@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->string('currency_icon');
             $table->string('currency_code');
             $table->decimal('points_conversion', 10, 2);
+            $table->decimal('delivery_charge_rate', 10, 2);
             $table->timestamps();
         });
     }
