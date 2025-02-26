@@ -138,7 +138,12 @@ class OrderController extends Controller
 
             // Update the order status
             $order->update(['status' => $request->status]);
-
+          
+            if ($request->status == 'canceled') {
+                $$order->user->update([
+                    'points' => $$order->user->points - ($request->discount_by_points / setting()->points_conversion),
+                ]);
+            }
             $this->logOrderStatus($order);
 
             // Send push notification to user

@@ -4,16 +4,19 @@ namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PlaceOrderRequest;
+use App\Http\Resources\OrderResource;
 use App\Models\ManualOrder;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderStatusLog;
+use App\Models\Pharmacy;
 use App\Traits\ImageHelper;
 use App\Traits\PushNotification;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class OrderController extends Controller
 {
@@ -23,6 +26,8 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
+            $user = auth()->user();
+
             if ($request->hasFile('prescription')) {
                 $prescriptionPath = $this->saveNewImage(
                     $request->file('prescription'),
@@ -33,14 +38,14 @@ class OrderController extends Controller
             $order = Order::create([
                 'tracking_id' => rand(),
                 'order_type' => $request->order_type,
-                'customer_id' => $request->customer_id,
+                'customer_id' => $user->id,
                 'total' => $request->total ?? 0,
                 'sub_total' => $request->sub_total ?? 0,
                 'delivery_address' => $request->delivery_address,
                 'delivery_lat' => $request->delivery_lat,
                 'delivery_long' => $request->delivery_long,
                 'status' => 'order_placed',
-                'date' => $request->date,
+                'date' => now(),
                 'pharmacy_id' => $request->pharmacy_id,
                 'discount_by_points' => $request->discount_by_points ?? 0,
                 'pharmacy_discount' => $request->pharmacy_discount ?? 0,
@@ -66,6 +71,10 @@ class OrderController extends Controller
                     ]);
                 }
             }
+
+            $user->update([
+                'points' => $user->points - ($request->discount_by_points / setting()->points_conversion),
+            ]);
 
             $this->logOrderStatus($order);
 
@@ -93,6 +102,32 @@ class OrderController extends Controller
             ], 500);
         }
     }
+    public function allOrders($type)
+    {
+        $query = Order::where('customer_id', auth()->user()->id); // Keeps it as a query builder
+
+        switch ($type) {
+            case 'canceled':
+                $query->where('status', 'canceled');
+                break;
+            case 'delivered':
+                $query->where('status', 'delivered');
+                break;
+            case 'all':
+                // No filtering needed
+                break;
+            default:
+                $query->whereNotIn('status', ['delivered', 'canceled']);
+                break;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Orders fetched successfully.',
+            'orders' => OrderResource::collection($query->get()),
+        ], 200);
+    }
+
     public function trackOrder($orderId)
     {
         // Check if the order exists
@@ -119,8 +154,68 @@ class OrderController extends Controller
     }
 
 
-    public function updateCart(Request $request)
+    public function getDeliveryCharge(Pharmacy $pharmacy)
     {
+        $user = auth()->user();
 
+        if (!$user || !$user->lat || !$user->long) {
+            return response()->json(['error' => 'User location not found'], 400);
+        }
+
+        if (!$pharmacy->lat || !$pharmacy->long) {
+            return response()->json(['error' => 'Pharmacy location not found'], 400);
+        }
+
+        // Get delivery charge rate from settings
+        $rate = setting()->delivery_charge_rate ?? 10; // Default rate if not found
+
+        // Make a request to the Google Maps API to get the road distance
+        $distance = $this->getRoadDistance(
+            $user->lat,
+            $user->long,
+            $pharmacy->lat,
+            $pharmacy->long
+        );
+
+        if ($distance === null) {
+            return response()->json(['error' => 'Unable to calculate road distance'], 400);
+        }
+
+        // Calculate delivery charge
+        $deliveryCharge = $distance * $rate;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Delivery charge calculated successfully.',
+            'distance_km' => round($distance, 2),
+            'delivery_charge' => round($deliveryCharge, 2),
+            'tax_percentage' => round(setting()->tax_percentage, 2)
+        ]);
     }
+
+    /**
+     * Get road distance using Google Maps Directions API.
+     */
+    private function getRoadDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        return 1;
+        $apiKey = env('YOUR_GOOGLE_MAPS_API_KEY');
+
+        $response = Http::get("https://maps.googleapis.com/maps/api/directions/json", [
+            'origin' => "$lat1,$lon1",
+            'destination' => "$lat2,$lon2",
+            'key' => $apiKey
+        ]);
+
+        $data = $response->json();
+
+        // Check for valid response
+        if (isset($data['routes'][0]['legs'][0]['distance']['value'])) {
+            // Distance in meters, convert to kilometers
+            return $data['routes'][0]['legs'][0]['distance']['value'] / 1000;
+        }
+
+        return null;
+    }
+
 }

@@ -55,18 +55,39 @@ class PharmacyOrderController extends Controller
         ], 200);
     }
 
-    public function addDetailsToManualOrder(Request $request)
+    public function addDetailsToManualOrder(Request $request, Order $order)
     {
         try {
-            $order = Order::findOrFail($request->order_id);
-            OrderDetail::create([
-                'order_id' => $request->order_id,
+            $validator = Validator::make($request->all(), [
+                'medicine_id' => 'required|exists:medicines,id',
+                'unit_id' => 'required|exists:units,id',
+                'qty' => 'required|integer|min:1',
+                'price' => 'required|numeric|min:0',
+                'discounted_price' => 'required|numeric|min:0'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => collect($validator->errors())
+                        ->map(fn($error) => $error)->toArray(),
+                ], 422);
+            }
+            $orderDetail = OrderDetail::create([
+                'order_id' => $order->id,
                 'medicine_id' => $request->medicine_id,
                 'unit_id' => $request->unit_id,
                 'qty' => $request->qty,
                 'price' => $request->price,
                 'discounted_price' => $request->discounted_price,
                 'status' => 'provided',
+            ]);
+            $medicineCost = $orderDetail->discounted_price * $orderDetail->qty;
+
+            $order->update([
+                'total' => $order->total + $medicineCost,
+                'sub_total' => $order->sub_total + $medicineCost,
+                'tax' => (($order->sub_total + $medicineCost) / 100) * setting()->tax_percantage
             ]);
             return response()->json([
                 'success' => true,
@@ -94,7 +115,7 @@ class PharmacyOrderController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Medicines retrieved successfully',
-            'medicines' =>MedicineResource::collection( $medicines),
+            'medicines' => MedicineResource::collection($medicines),
         ]);
     }
 
@@ -228,11 +249,26 @@ class PharmacyOrderController extends Controller
 
             // Check if all order details are updated and handle the order status
             $order = $orderDetail->order;
+
+            // Send notification about the status change
+            if ($request->status == 'not-provided') {
+                $this->sendOrderDetailRejectionNotification(
+                    $order->customer_id,
+                    $order->id,
+                    $order->tracking_id,
+                    $orderDetail->medicine->name_en
+                );
+            }
             $statuses = $order->orderDetails->pluck('status');
 
             if (!$statuses->contains('pending')) {
+                $medicineCost = $orderDetail->discounted_price * $orderDetail->qty;
                 if ($statuses->every(fn($status) => $status === 'not-provided')) {
-                    $order->update(['status' => 'store_rejects']);
+                    $order->update([
+                        'total' => $order->total - $medicineCost,
+                        'sub_total' => $order->sub_total - $medicineCost,
+                        'status' => 'store_rejects'
+                    ]);
                 } elseif ($statuses->every(fn($status) => $status === 'provided')) {
                     $order->update(['status' => 'store_accepts']);
                 }

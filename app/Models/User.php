@@ -32,7 +32,7 @@ class User extends Authenticatable
         'email_verified_at',
         'device_token',
     ];
-    
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -62,5 +62,9 @@ class User extends Authenticatable
     public function medicines()
     {
         return $this->hasMany(Medicine::class, 'user_id');
+    }
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'customer_id');
     }
 }

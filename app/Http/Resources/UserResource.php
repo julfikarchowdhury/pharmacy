@@ -25,6 +25,7 @@ class UserResource extends JsonResource
             'status' => $this->status ?? 'active',
             'image' => asset($this->image),
             'points' => $this->points ?? 0,
+            'useable_amount' => setting()->points_conversion * ($this->points ?? 0),
             'pharmacy' => new PharmacyResource($this->whenLoaded('pharmacy')),
 
         ];

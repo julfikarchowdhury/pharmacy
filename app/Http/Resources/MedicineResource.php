@@ -16,13 +16,12 @@ class MedicineResource extends JsonResource
     {
         $lang = $request->get('lang', 'en');
 
-        if (str_contains(request()->path(), 'phamracies-medicines')) {
-            return [
-                'id' => $this->id,
-                'name' => $lang === 'bn' ? $this->name_bn : $this->name_en,
-                'unit' => UnitResource::collection($this->units)
-            ];
-        }
+        // if (str_contains(request()->path(), 'phamracies-medicines')) {
+        //     return [
+        //         'id' => $this->id,
+        //         'name' => $lang === 'bn' ? $this->name_bn : $this->name_en,
+        //     ];
+        // }
         return [
             'id' => $this->id,
             'name' => $lang === 'bn' ? $this->name_bn : $this->name_en,
@@ -30,6 +29,8 @@ class MedicineResource extends JsonResource
             'strip_price' => $this->strip_price ?? null,
             'unit_price' => $this->unit_price,
             'image' => $this->medicineThumb ? asset($this->medicineThumb[0]->src) : null,
+            'unit' => UnitResource::collection($this->whenLoaded('units'))
+
         ];
     }
 }

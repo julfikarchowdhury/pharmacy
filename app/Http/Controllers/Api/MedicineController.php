@@ -51,7 +51,8 @@ class MedicineController extends Controller
         $perPage = $request->input('per_page', 10);
 
         $pharmacies = $medicine->pharmacies()
-            ->where('status', 'active')->paginate($perPage);
+            ->where('pharmacies.status', 'active')
+            ->paginate($perPage);
 
         return response()->json([
             'success' => true,
@@ -64,18 +65,13 @@ class MedicineController extends Controller
 
     public function medicineDetails(Medicine $medicine, Pharmacy $pharmacy)
     {
-        if (!$pharmacy) {
+        if (!$pharmacy || !$medicine || !$pharmacy->medicines()->where('medicine_id', $medicine->id)->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Pharmacy not found.'
+                'message' => 'Medicine not found in this pharmacy.'
             ], 404);
         }
-        if (!$medicine) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Medicine not found.'
-            ], 404);
-        }
+
         // Fetch medicine details with all relationships
         $medicineDetails = $medicine->load([
             'category',
@@ -89,7 +85,7 @@ class MedicineController extends Controller
                     ->withPivot('discount_percentage'); // Load the discount_percentage field from the pivot table
             }
         ]);
-   
+
         $relatedMedicines = Medicine::where('medicine_company_id', $medicine->medicine_company_id)
             ->where('medicine_generic_id', $medicine->medicine_generic_id)
             ->where('concentration_id', '!=', $medicine->concentration_id)
@@ -101,7 +97,7 @@ class MedicineController extends Controller
                 'medicine_id' => $med->id,
                 'concentration' => $med->concentration->value,
             ] : null;
-        })->filter()->values();
+        })->filter()->unique('concentration')->values();
 
         return response()->json([
             'success' => true,

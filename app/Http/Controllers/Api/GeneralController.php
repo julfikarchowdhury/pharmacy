@@ -11,27 +11,33 @@ use Illuminate\Http\Request;
 
 class GeneralController extends Controller
 {
-    public function gymTipTitles(Request $request, $type)
+    public function gymTipTitles(Request $request, string $type)
     {
         $languageColumn = $request->get('lang') === 'bn' ? 'title_bn' : 'title_en';
 
         $tips = Tip::where([
             'type' => $type,
-            'status' => 'active'
-        ])->pluck($languageColumn, 'id');
+            'status' => 'active',
+        ])->get(['id', $languageColumn])->map(function ($tip) use ($languageColumn) {
+            return [
+                'id' => $tip->id,
+                'title' => $tip->$languageColumn,
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'message' => 'Gym tip titles retrieved successfully.',
-            'data' => $tips
+            'message' => ucfirst($type) . ' tip titles retrieved successfully.',
+            'tips' => $tips,
         ]);
     }
+
 
     public function tipsDetails(Tip $tip)
     {
         return response()->json([
             'success' => true,
-            'message' => 'Medicine details retrieved successfully.',
+            'message' => 'Tip details retrieved successfully.',
             'data' => new TipsResource($tip)
         ]);
     }
@@ -44,5 +50,5 @@ class GeneralController extends Controller
             'pharmacies' => PharmacyResource::collection(Pharmacy::get())
         ]);
     }
-    
+
 }

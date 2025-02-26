@@ -22,7 +22,6 @@ class PlaceOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer_id' => 'required|exists:users,id',
             'pharmacy_id' => 'required|exists:pharmacies,id',
             'order_type' => 'required|in:manual,direct',
             'total' => 'required|numeric|min:0',
@@ -34,7 +33,6 @@ class PlaceOrderRequest extends FormRequest
             'pharmacy_discount' => 'nullable|numeric|min:0',
             'delivery_charge' => 'required|numeric|min:0',
             'tax' => 'required|numeric|min:0',
-            'date' => 'required|date',
             // 'payment_type' => 'required|in:cod,bkash,nagad',
             // 'payment_status' => 'required|in:paid,due',
             'note' => 'nullable|string' . ($this->order_type === 'manual' ? '|required' : ''),

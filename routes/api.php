@@ -56,8 +56,14 @@ Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
     Route::post('/user-update-profile', [UserAuthController::class, 'updateProfile']);
 
     Route::post('/place-order', [OrderController::class, 'placeOrder']);
-    Route::post('/place-manual-order', [OrderController::class, 'placeManualOrder']);
     Route::get('/track-order/{orderId}', [OrderController::class, 'trackOrder']);
+
+    Route::get('/user-all-orders/{type}', [OrderController::class, 'allOrders']);
+
+    //get delivery charge according to the distance
+    Route::get('/get-delivery-charge/{pharmacy}', [OrderController::class, 'getDeliveryCharge']);
+
+    //not complete
     Route::post('/add-drug-request', [MedicineController::class, 'addDrugRequest']);
 
 });
@@ -95,5 +101,6 @@ Route::middleware(['auth:sanctum', 'role:pharmacy_owner'])->group(function () {
 
     Route::get('/phamracies-medicines', [PharmacyOrderController::class, 'getMedicinesByPharmacy']);
 
+    Route::post('/add-details-of-order/{order}', [PharmacyOrderController::class, 'addDetailsToManualOrder']);
 
 });

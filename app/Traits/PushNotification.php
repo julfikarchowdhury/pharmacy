@@ -13,10 +13,48 @@ trait PushNotification
     /**
      * Send a push notification for order status update.
      */
+    public function sendOrderDetailRejectionNotification(
+        $userId,
+        $orderId,
+        $orderTrackingId,
+        $medicineName
+    ) {
+        try {
+            $user = User::find($userId);
+            if ($user && $user->device_token) {
+                $title = "Medicine has been removed from order !";
+                $message = ucfirst($medicineName) . " has been removed from your order due to unavailabilty from order #" . $orderTrackingId;
+
+                $this->saveNotification(
+                    $userId,
+                    $title,
+                    $message,
+                    $orderId
+                );
+
+                $this->sendPushNotification(
+                    $user->device_token,
+                    $title,
+                    $message,
+                    $orderId
+                );
+            } else {
+                Log::warning("User not found or device token is missing
+                 for user ID: {$userId}");
+            }
+        } catch (Exception $e) {
+            Log::error("Error sending order status notification 
+            for user ID: {$userId}. Error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send a push notification for order status update.
+     */
     public function sendOrderStatusNotification(
         $userId,
         $status,
-        $orderId
+        $orderId,
     ) {
         try {
             $user = User::find($userId);
