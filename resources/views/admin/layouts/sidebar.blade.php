@@ -23,12 +23,7 @@
     <li class="nav-item active">
         <a class="nav-link" href="{{ route('orders.index') }}">
             <i class="fas fa-fw fa-tachometer-alt"></i>
-            <span>Direct Orders</span></a>
-    </li>
-    <li class="nav-item active">
-        <a class="nav-link" href="{{ route('manual_orders.index') }}">
-            <i class="fas fa-fw fa-tachometer-alt"></i>
-            <span>Manual Orders</span></a>
+            <span>Orders</span></a>
     </li>
     <li class="nav-item active">
         <a class="nav-link" href="{{ route('users.index') }}">

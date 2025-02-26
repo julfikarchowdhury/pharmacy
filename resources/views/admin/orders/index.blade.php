@@ -3,13 +3,13 @@
 @section('content')
     <!-- breadcrumbs -->
     <div class="d-flex align-items-center justify-content-between">
-        <h1 class="h3 mb-2 text-gray-800">Direct Orders </h1>
+        <h1 class="h3 mb-2 text-gray-800">Orders </h1>
         <nav aria-label="breadcrumb" class="d-flex align-items-center">
             <ol class="breadcrumb mb-0 bg-transparent">
                 <li class="breadcrumb-item">
                     <a href="{{ route('admin.dashboard') }}" class="text-primary">Dashboard</a>
                 </li>
-                <li class="breadcrumb-item active" aria-current="page">Direct Orders </li>
+                <li class="breadcrumb-item active" aria-current="page">Orders </li>
             </ol>
         </nav>
     </div>
@@ -17,7 +17,7 @@
     <!-- DataTales Example -->
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between">
-            <h6 class="m-0 font-weight-bold text-primary">Direct Orders Table</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Orders Table</h6>
         </div>
         <div class="card-body">
             <div class="row mb-3">
@@ -52,10 +52,11 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table table-bordered" id="directOrdersTable">
+                <table class="table table-bordered" id="ordersTable">
                     <thead>
                         <tr>
                             <th>Tracking Id</th>
+                            <th>Order Type</th>
                             <th>Pharmacy Name</th>
                             <th>Customer Name</th>
                             <th>Total Amount</th>
@@ -75,7 +76,7 @@
     <script>
         $(document).ready(function () {
             $(document).ready(function () {
-                var table = $('#directOrdersTable').DataTable({
+                var table = $('#ordersTable').DataTable({
                     processing: true,
                     serverSide: true,
                     ajax: {
@@ -89,6 +90,13 @@
                     },
                     columns: [
                         { data: 'tracking_id', name: 'tracking_id' },
+                        {
+                            data: 'order_type',
+                            name: 'order_type',
+                            render: function (data, type, row) {
+                                return data.charAt(0).toUpperCase() + data.slice(1);
+                            }
+                        },
                         { data: 'pharmacy_name', name: 'pharmacy_name' },
                         { data: 'customer_name', name: 'customer_name' },
                         { data: 'total', name: 'total' },
@@ -99,7 +107,7 @@
                 });
 
                 // Trigger filter change
-                $('#pharmacyFilter, #statusFilter').change(function () {
+                $('#pharmacyFilter, #statusFilter,#orderType').change(function () {
                     table.ajax.reload();
                 });
             });
@@ -161,7 +169,7 @@
                             success: function (response) {
                                 if (response.success) {
                                     Swal.fire('Updated!', 'Order status has been updated.', 'success');
-                                    $('#directOrdersTable').DataTable().ajax.reload();
+                                    $('#ordersTable').DataTable().ajax.reload();
                                 } else {
                                     Swal.fire('Failed!', 'Order status could not be updated.', 'error');
                                 }
@@ -236,7 +244,7 @@
                             if (response.status === 'success') {
                                 Swal.fire('Deleted!', response.message, 'success')
                                     .then(() => {
-                                        $('#directOrdersTable').DataTable().ajax.reload();
+                                        $('#ordersTable').DataTable().ajax.reload();
                                     });
                             } else {
                                 Swal.fire('Error!', response.message, 'error');
