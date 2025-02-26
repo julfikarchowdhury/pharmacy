@@ -156,41 +156,51 @@ class OrderController extends Controller
 
     public function getDeliveryCharge(Pharmacy $pharmacy)
     {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
 
-        if (!$user || !$user->lat || !$user->long) {
-            return response()->json(['error' => 'User location not found'], 400);
+            if (!$user || !$user->lat || !$user->long) {
+                return response()->json(['error' => 'User location not found'], 400);
+            }
+
+            if (!$pharmacy->lat || !$pharmacy->long) {
+                return response()->json(['error' => 'Pharmacy location not found'], 400);
+            }
+
+            // Get delivery charge rate from settings
+            $rate = setting()->delivery_charge_rate ?? 10; // Default rate if not found
+
+            // Make a request to the Google Maps API to get the road distance
+            $distance = $this->getRoadDistance(
+                $user->lat,
+                $user->long,
+                $pharmacy->lat,
+                $pharmacy->long
+            );
+
+            if ($distance === null) {
+                return response()->json(['error' => 'Unable to calculate road distance'], 400);
+            }
+
+            // Calculate delivery charge
+            $deliveryCharge = $distance * $rate;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Delivery charge calculated successfully.',
+                'distance_km' => round($distance, 2),
+                'delivery_charge' => round($deliveryCharge, 2),
+                'tax_percentage' => round(setting()->tax_percentage, 2)
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error calculating delivery charge: ' . $e->getMessage(), [
+                'user_id' => $user->id ?? null,
+                'pharmacy_id' => $pharmacy->id ?? null,
+                'exception' => $e
+            ]);
+
+            return response()->json(['error' => 'Something went wrong while calculating delivery charge'], 500);
         }
-
-        if (!$pharmacy->lat || !$pharmacy->long) {
-            return response()->json(['error' => 'Pharmacy location not found'], 400);
-        }
-
-        // Get delivery charge rate from settings
-        $rate = setting()->delivery_charge_rate ?? 10; // Default rate if not found
-
-        // Make a request to the Google Maps API to get the road distance
-        $distance = $this->getRoadDistance(
-            $user->lat,
-            $user->long,
-            $pharmacy->lat,
-            $pharmacy->long
-        );
-
-        if ($distance === null) {
-            return response()->json(['error' => 'Unable to calculate road distance'], 400);
-        }
-
-        // Calculate delivery charge
-        $deliveryCharge = $distance * $rate;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Delivery charge calculated successfully.',
-            'distance_km' => round($distance, 2),
-            'delivery_charge' => round($deliveryCharge, 2),
-            'tax_percentage' => round(setting()->tax_percentage, 2)
-        ]);
     }
 
     /**
@@ -198,24 +208,42 @@ class OrderController extends Controller
      */
     private function getRoadDistance($lat1, $lon1, $lat2, $lon2)
     {
-        return 1;
-        $apiKey = env('YOUR_GOOGLE_MAPS_API_KEY');
+        try {
+            $apiKey = env('YOUR_GOOGLE_MAPS_API_KEY');
+            if (empty($apiKey)) {
+                return 1;
+            }
+            $response = Http::get("https://maps.googleapis.com/maps/api/directions/json", [
+                'origin' => "$lat1,$lon1",
+                'destination' => "$lat2,$lon2",
+                'key' => $apiKey
+            ]);
 
-        $response = Http::get("https://maps.googleapis.com/maps/api/directions/json", [
-            'origin' => "$lat1,$lon1",
-            'destination' => "$lat2,$lon2",
-            'key' => $apiKey
-        ]);
+            $data = $response->json();
 
-        $data = $response->json();
+            // Check for valid response
+            if (isset($data['routes'][0]['legs'][0]['distance']['value'])) {
+                // Distance in meters, convert to kilometers
+                return $data['routes'][0]['legs'][0]['distance']['value'] / 1000;
+            }
 
-        // Check for valid response
-        if (isset($data['routes'][0]['legs'][0]['distance']['value'])) {
-            // Distance in meters, convert to kilometers
-            return $data['routes'][0]['legs'][0]['distance']['value'] / 1000;
+            Log::warning('Google Maps API response did not contain distance data', [
+                'origin' => "$lat1,$lon1",
+                'destination' => "$lat2,$lon2",
+                'response' => $data
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Error fetching road distance from Google Maps API: ' . $e->getMessage(), [
+                'origin' => "$lat1,$lon1",
+                'destination' => "$lat2,$lon2",
+                'exception' => $e
+            ]);
+
+            return null;
         }
-
-        return null;
     }
+
 
 }
