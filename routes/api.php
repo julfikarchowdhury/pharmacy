@@ -39,7 +39,7 @@ Route::get('/tips/{type}', [GeneralController::class, 'gymTipTitles']);
 //all pharmacies
 Route::get('all-pharmacies', [GeneralController::class, 'allPharmacies']);
 
-
+Route::get('pharmacy-wise-medicine/{pharmacy}', [GeneralController::class, 'getMedicinesByPharmacy']);
 
 Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
     Route::post('/logout', [CommonAuthController::class, 'logout']);
@@ -54,6 +54,8 @@ Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
     Route::post('/user-change-password', [CommonAuthController::class, 'changePassword']);
 
     Route::post('/user-update-profile', [UserAuthController::class, 'updateProfile']);
+
+    Route::get('/sliders', [GeneralController::class, 'sliders']);
 
     Route::post('/place-order', [OrderController::class, 'placeOrder']);
     Route::get('/track-order/{orderId}', [OrderController::class, 'trackOrder']);

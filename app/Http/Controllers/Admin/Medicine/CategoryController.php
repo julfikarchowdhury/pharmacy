@@ -10,6 +10,7 @@ use App\Traits\HandlesDeleteExceptions;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -24,7 +25,7 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories = Category::all();
+        $categories = Category::latest()->all();
         return view(
             'admin.medicine_attributes.categories',
             compact('categories')
@@ -36,6 +37,8 @@ class CategoryController extends Controller
      */
     public function store(CategoryRequest $request): RedirectResponse
     {
+        DB::beginTransaction();
+
         try {
             $iconPath = $request->hasFile('icon')
                 ? $this->saveNewImage($request->file('icon'), 'categories')
@@ -47,12 +50,15 @@ class CategoryController extends Controller
                 'icon' => $iconPath,
                 'status' => $request->status,
             ]);
+            DB::commit();
 
             return redirect()->back()->with(
                 'success',
                 'Category created successfully'
             );
         } catch (Exception $e) {
+            DB::rollBack();
+
             Log::error('Error creating category: ' . $e->getMessage());
 
             return redirect()->back()->with(
@@ -69,6 +75,7 @@ class CategoryController extends Controller
         CategoryRequest $request,
         Category $category
     ): JsonResponse {
+        DB::beginTransaction();
         try {
             $iconPath = $request->hasFile('icon')
                 ? $this->updateImage(
@@ -84,12 +91,14 @@ class CategoryController extends Controller
                 'icon' => $iconPath,
                 'status' => $request->status,
             ]);
+            DB::commit();
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Category updated successfully'
             ]);
         } catch (Exception $e) {
+            DB::rollBack();
 
             Log::error('Error updating category: ' . $e->getMessage());
 

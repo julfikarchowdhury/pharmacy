@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\Medicine\UnitController;
 use App\Http\Controllers\Admin\Orders\OrderController;
 use App\Http\Controllers\Admin\Orders\ManualOrderController;
 use App\Http\Controllers\Admin\PharmacyController;
+use App\Http\Controllers\Admin\SliderController;
 use App\Http\Controllers\Admin\TipController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -43,10 +44,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/orders/change-status/{order}', [OrderController::class, 'changeStatus'])->name('orders.changeStatus');
     Route::post('/orders/change-payment-status/{order}', [OrderController::class, 'changePaymentStatus'])->name('orders.changePaymentStatus');
 
-    //order management 
-    Route::resource('manual_orders', ManualOrderController::class)->except(['create', 'edit', 'store', 'update']);
-    Route::post('/manual_orders/change-status/{manual_order}', [ManualOrderController::class, 'changeStatus'])->name('manual_orders.changeStatus');
-
     //user management
     Route::resource('users', UserController::class)->except(['create', 'edit', 'store', 'update']);
     Route::post('/users/change-status/{user}', [UserController::class, 'changeStatus'])->name('users.changeStatus');
@@ -59,6 +56,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('admin/profile', [ProfileController::class, 'profile'])->name('admin.profile');
     Route::post('profile/change', [ProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('password/update', [ProfileController::class, 'updatePassword'])->name('password.update');
+
+    //sliders management
+    Route::resource('sliders', SliderController::class)->except(['create', 'edit', 'show']);
+    Route::post('/sliders/change-status/{slider}', [SliderController::class, 'changeStatus'])->name('sliders.changeStatus');
 
     //category management
     Route::resource('categories', CategoryController::class)->except(['create', 'edit', 'show']);
