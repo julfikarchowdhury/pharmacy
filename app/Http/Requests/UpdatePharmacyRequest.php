@@ -25,7 +25,7 @@ class UpdatePharmacyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pharmacy_name' => 'nullable|string|max:255|unique:pharmacies,name,' . $this->pharmacy()->id,
+            'pharmacy_name' => 'nullable|string|max:255|unique:pharmacies,name,' . $this->user()->pharmacy->id,
             'pharmacy_address' => 'nullable|string|max:500',
             'pharmacy_lat' => 'nullable|numeric',
             'pharmacy_long' => 'nullable|numeric',

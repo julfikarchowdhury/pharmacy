@@ -131,6 +131,49 @@ class PharmacyAuthController extends Controller
             ], 500);
         }
     }
+    public function profileDetails(Request $request)
+    {
+        try {
+            // Get the authenticated user (pharmacy owner)
+            $user = $request->user();
+
+            // Check if user exists and is a pharmacy owner
+            if (!$user || $user->role !== 'pharmacy_owner') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found or not authorized.',
+                ], 404);
+            }
+
+            // Get the associated pharmacy for the pharmacy owner
+            $pharmacy = Pharmacy::where('user_id', $user->id)->first();
+
+            if (!$pharmacy) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pharmacy not found.',
+                ], 404);
+            }
+
+            // Return pharmacy owner and pharmacy profile data
+            return response()->json([
+                'success' => true,
+                'message' => 'Pharmacy profile retrieved successfully.',
+                'data' => [
+                    'pharmacy_owner' => new UserResource($user), // UserResource for consistent format
+                    'pharmacy' => new PharmacyResource($pharmacy), // PharmacyResource for consistent format
+                ]
+            ], 200);
+
+        } catch (Exception $e) {
+            Log::error('Pharmacy profile retrieval failed: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve profile. Please try again.',
+            ], 500);
+        }
+    }
 
     public function updateProfile(UpdateUserRequest $userRequest, UpdatePharmacyRequest $pharmacyRequest)
     {
@@ -142,7 +185,6 @@ class PharmacyAuthController extends Controller
             // Update pharmacy owner details
             $pharmacyOwner->name = $userRequest->name ?? $pharmacyOwner->name;
             $pharmacyOwner->phone = $userRequest->phone ?? $pharmacyOwner->phone;
-            $pharmacyOwner->email = $userRequest->email ?? $pharmacyOwner->email;
             $pharmacyOwner->address = $userRequest->address ?? $pharmacyOwner->address;
             $pharmacyOwner->lat = $userRequest->lat ?? $pharmacyOwner->lat;
             $pharmacyOwner->long = $userRequest->long ?? $pharmacyOwner->long;

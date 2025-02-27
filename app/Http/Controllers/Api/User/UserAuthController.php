@@ -108,6 +108,36 @@ class UserAuthController extends Controller
             ], 500);
         }
     }
+    public function profileDetails(Request $request)
+    {
+        try {
+            // Get the authenticated user
+            $user = auth()->user();
+
+            // Check if user exists
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found.',
+                ], 404);
+            }
+
+            // Return user profile data
+            return response()->json([
+                'success' => true,
+                'message' => 'User profile retrieved successfully.',
+                'data' => new UserResource($user), // Use UserResource for consistent response formatting
+            ], 200);
+
+        } catch (Exception $e) {
+            Log::error('User profile retrieval failed: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve profile. Please try again.',
+            ], 500);
+        }
+    }
 
     public function updateProfile(UpdateUserRequest $request)
     {

@@ -38,19 +38,20 @@ Route::get('/tips/{type}', [GeneralController::class, 'gymTipTitles']);
 
 //all pharmacies
 Route::get('all-pharmacies', [GeneralController::class, 'allPharmacies']);
-
 Route::get('pharmacy-wise-medicine/{pharmacy}', [GeneralController::class, 'getMedicinesByPharmacy']);
+
+//forget password
+Route::post('/user-forget-password', [CommonAuthController::class, 'forgetPassword']);
+Route::post('/user-verify-otp', [CommonAuthController::class, 'verifyOtp']);
+Route::post('/user-reset-password', [CommonAuthController::class, 'resetPassword']);
 
 Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
     Route::post('/logout', [CommonAuthController::class, 'logout']);
+    Route::get('/user-profile-details', [UserAuthController::class, 'profileDetails']);
 
     //set device token
     Route::post('/set-user-device-token', [CommonAuthController::class, 'setDeviceToken']);
 
-    Route::post('/user-forget-password', [CommonAuthController::class, 'forgetPassword']);
-    Route::post('/user-verify-otp', [CommonAuthController::class, 'verifyOtp']);
-
-    Route::post('/user-reset-password', [CommonAuthController::class, 'resetPassword']);
     Route::post('/user-change-password', [CommonAuthController::class, 'changePassword']);
 
     Route::post('/user-update-profile', [UserAuthController::class, 'updateProfile']);
@@ -77,16 +78,20 @@ Route::middleware(['auth:sanctum', 'role:user'])->group(function () {
 Route::post('/pharmacy-register', [PharmacyAuthController::class, 'register']);
 Route::post('/pharmacy-login', [PharmacyAuthController::class, 'login']);
 
+//forget password
+Route::post('/pharmacy-forget-password', [CommonAuthController::class, 'forgetPassword']);
+Route::post('/pharmacy-verify-otp', [CommonAuthController::class, 'verifyOtp']);
+
+Route::post('/pharmacy-reset-password', [CommonAuthController::class, 'resetPassword']);
+
 Route::middleware(['auth:sanctum', 'role:pharmacy_owner'])->group(function () {
     Route::post('/pharmacy-logout', [CommonAuthController::class, 'logout']);
+
+    Route::get('/pharmacy-profile-details', [PharmacyAuthController::class, 'profileDetails']);
 
     //set device token
     Route::post('/set-pharmacy-device-token', [CommonAuthController::class, 'setDeviceToken']);
 
-    Route::post('/pharmacy-forget-password', [CommonAuthController::class, 'forgetPassword']);
-    Route::post('/pharmacy-verify-otp', [CommonAuthController::class, 'verifyOtp']);
-
-    Route::post('/pharmacy-reset-password', [CommonAuthController::class, 'resetPassword']);
     Route::post('/pharmacy-change-password', [CommonAuthController::class, 'changePassword']);
 
     Route::post('/pharmacy-update-profile', [PharmacyAuthController::class, 'updateProfile']);
