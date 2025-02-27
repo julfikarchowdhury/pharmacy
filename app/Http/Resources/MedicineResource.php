@@ -29,6 +29,13 @@ class MedicineResource extends JsonResource
             'strip_price' => $this->strip_price ?? null,
             'unit_price' => $this->unit_price,
             'image' => $this->medicineThumb ? asset($this->medicineThumb[0]->src) : null,
+            'discounted_strip_price' => isset($this->pharmacies[0]) && !is_null($this->pharmacies[0]->pivot->discount_percentage) && !is_null($this->strip_price)
+                ? round($this->strip_price * (1 - $this->pharmacies[0]->pivot->discount_percentage / 100), 2)
+                : "",
+            'discounted_unit_price' => isset($this->pharmacies[0]) && !is_null($this->pharmacies[0]->pivot->discount_percentage) && !is_null($this->unit_price)
+                ? round($this->unit_price * (1 - $this->pharmacies[0]->pivot->discount_percentage / 100), 2)
+                : "",
+
             'unit' => UnitResource::collection($this->whenLoaded('units'))
 
         ];

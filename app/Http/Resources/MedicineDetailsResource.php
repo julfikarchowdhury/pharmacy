@@ -38,12 +38,7 @@ class MedicineDetailsResource extends JsonResource
             'description' => $lang === 'bn' ? $this->description_bn : $this->description_en,
             'category' => $lang === 'bn' ? $this->category->name_bn : $this->category->name_en,
             'company' => $lang === 'bn' ? $this->company->name_bn : $this->company->name_en,
-            'units' => $this->units->map(function ($unit, $lang) {
-                return [
-                    'id' => $unit->id,
-                    'value' => $lang === 'bn' ? $unit->value_bn : $unit->value_en,
-                ];
-            }),
+            'units' => UnitResource::collection($this->whenLoaded('units'))
         ];
     }
 }

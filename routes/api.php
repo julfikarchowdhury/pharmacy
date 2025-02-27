@@ -92,12 +92,15 @@ Route::middleware(['auth:sanctum', 'role:pharmacy_owner'])->group(function () {
     Route::post('/pharmacy-update-profile', [PharmacyAuthController::class, 'updateProfile']);
 
     //add medicine to shop
-    Route::post('/add-medicines', [ManagePharmacyController::class, 'addMedicines']);
+    Route::post('/add-medicines-to-pharmacy', [ManagePharmacyController::class, 'addMedicines']);
+    Route::post('/remove-medicines-from-pharmacy', [ManagePharmacyController::class, 'removeMedicines']);
 
     //get medicine that are not inside the pharmacy 
     Route::get('/get-medicine-for-pharmacy/{pharmacy}', [ManagePharmacyController::class, 'getMedicinesNotSynced']);
 
-    Route::get('/all-orders/{type}', [PharmacyOrderController::class, 'allOrders']);
+    Route::get('/new-orders/{type}', [PharmacyOrderController::class, 'newOrders']);
+
+    Route::get('/all-orders/{type}/{status}', [PharmacyOrderController::class, 'allOrders']);
     Route::get('/order-details/{order}', [PharmacyOrderController::class, 'orderDetails']);
     Route::post('/update-status-order/{order}', [PharmacyOrderController::class, 'updateStatus']);
     Route::post('/accept-reject-medicine-of-order/{orderDetail}', [PharmacyOrderController::class, 'acceptRejectMedicineOfOrder']);

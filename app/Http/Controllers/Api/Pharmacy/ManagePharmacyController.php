@@ -10,11 +10,11 @@ use App\Models\Pharmacy;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ManagePharmacyController extends Controller
 {
-
     public function addMedicines(AddMedicineToPharmacyRequest $request)
     {
         try {
@@ -30,7 +30,7 @@ class ManagePharmacyController extends Controller
 
             $medicines = $request->input('medicines');
 
-            $medicineIds = array_keys($medicines);
+            $medicineIds = array_column($medicines, 'medicine_id');
             $existingMedicines = Medicine::whereIn('id', $medicineIds)->pluck('id')->toArray();
 
             $invalidMedicineIds = array_diff($medicineIds, $existingMedicines);
@@ -44,8 +44,8 @@ class ManagePharmacyController extends Controller
             }
 
             $pivotData = [];
-            foreach ($medicines as $medicineId => $discount) {
-                $pivotData[$medicineId] = ['discount_percentage' => $discount];
+            foreach ($medicines as $medicine) {
+                $pivotData[$medicine['medicine_id']] = ['discount_percentage' => $medicine['disocunt']];
             }
 
             $pharmacy->medicines()->sync($pivotData);
@@ -54,7 +54,6 @@ class ManagePharmacyController extends Controller
                 'success' => true,
                 'message' => 'Medicines added to the pharmacy successfully.'
             ], 200);
-
         } catch (Exception $e) {
             Log::error('Error adding medicines to pharmacy: ' . $e->getMessage());
 
@@ -64,6 +63,66 @@ class ManagePharmacyController extends Controller
             ], 500);
         }
     }
+
+    public function removeMedicines(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+    
+            $pharmacyOwner = Auth::user();
+            $pharmacy = $pharmacyOwner->pharmacy;
+    
+            if (!$pharmacy) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pharmacy not found.'
+                ], 404);
+            }
+    
+            $medicineIds = $request->input('medicine_ids');
+    
+            // Ensure it's an array
+            if (!is_array($medicineIds) || empty($medicineIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid input. medicine_ids must be a non-empty array.'
+                ], 400);
+            }
+    
+            // Validate that the medicines exist
+            $existingMedicines = Medicine::whereIn('id', $medicineIds)->pluck('id')->toArray();
+            $invalidMedicineIds = array_diff($medicineIds, $existingMedicines);
+    
+            if (!empty($invalidMedicineIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more selected medicines do not exist in the database.',
+                    'invalid_medicines' => $invalidMedicineIds
+                ], 400);
+            }
+    
+            // Detach medicines from the pharmacy
+            $pharmacy->medicines()->detach($medicineIds);
+    
+            DB::commit();
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Medicines removed from the pharmacy successfully.'
+            ], 200);
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error removing medicines from pharmacy: ' . $e->getMessage());
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong. Please try again later.'
+            ], 500);
+        }
+    }
+    
+
+
     public function getMedicinesNotSynced(Request $request, Pharmacy $pharmacy)
     {
         $perPage = $request->input('per_page', 10);
@@ -91,4 +150,56 @@ class ManagePharmacyController extends Controller
             'pagination' => $this->paginateData($medicinesNotSynced)
         ]);
     }
+
+    // public function addMedicines(AddMedicineToPharmacyRequest $request)
+    // {
+    //     try {
+    //         $pharmacyOwner = Auth::user();
+    //         $pharmacy = $pharmacyOwner->pharmacy;
+
+    //         if (!$pharmacy) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Pharmacy not found.'
+    //             ], 404);
+    //         }
+
+    //         $medicines = $request->input('medicines');
+
+    //         $medicineIds = array_keys($medicines);
+    //         $existingMedicines = Medicine::whereIn('id', $medicineIds)->pluck('id')->toArray();
+
+    //         $invalidMedicineIds = array_diff($medicineIds, $existingMedicines);
+
+    //         if (!empty($invalidMedicineIds)) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'One or more selected medicines do not exist in the database.',
+    //                 'invalid_medicines' => $invalidMedicineIds
+    //             ], 400);
+    //         }
+
+    //         $pivotData = [];
+    //         foreach ($medicines as $medicineId => $discount) {
+    //             $pivotData[$medicineId] = ['discount_percentage' => $discount];
+    //         }
+
+    //         $pharmacy->medicines()->sync($pivotData);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Medicines added to the pharmacy successfully.'
+    //         ], 200);
+
+    //     } catch (Exception $e) {
+    //         Log::error('Error adding medicines to pharmacy: ' . $e->getMessage());
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Something went wrong. Please try again later.'
+    //         ], 500);
+    //     }
+    // }
+
+
 }

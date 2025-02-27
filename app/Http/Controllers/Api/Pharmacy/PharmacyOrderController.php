@@ -20,14 +20,18 @@ class PharmacyOrderController extends Controller
     /**
      * Get all orders for the authenticated pharmacy with optional status filter.
      */
-    public function allOrders(Request $request, $type)
+    public function allOrders($type, $status)
     {
         $pharmacyId = auth()->user()->pharmacy->id;
 
         $query = Order::where(['pharmacy_id' => $pharmacyId, 'order_type' => $type]);
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+        if ($status === 'delivered') {
+            $query->where('status', 'delivered');
+        } elseif ($status === 'canceled') {
+            $query->where('status', 'canceled');
+        } elseif ($status !== 'all') {
+            $query->whereNotIn('status', ['delivered', 'canceled']);
         }
 
         $orders = $query->get();
@@ -39,6 +43,25 @@ class PharmacyOrderController extends Controller
         ], 200);
     }
 
+    /**
+     * Get all new orders for the authenticated pharmacy with optional status filter.
+     */
+    public function newOrders($type)
+    {
+        $pharmacyId = auth()->user()->pharmacy->id;
+
+        $query = Order::where(['pharmacy_id' => $pharmacyId, 'order_type' => $type]);
+
+        $query->whereIn('status', ['order_placed', 'store_accepts', 'store_rejects']);
+
+        $orders = $query->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'New orders fetched successfully.',
+            'orders' => OrderResource::collection($orders),
+        ], 200);
+    }
     /**
      * Get the details of a specific order.
      */
