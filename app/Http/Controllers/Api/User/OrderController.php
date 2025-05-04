@@ -246,29 +246,4 @@ class OrderController extends Controller
     }
 
 
-    public function userOrders(Request $request)
-    {
-        try {
-            $query = Order::query();
-            if ($request->has('status')) {
-                $query->where('status', $request->status);
-            }
-            $orders = $query->with('customer', 'pharmacy')->latest()->get();
-            return response()->json(['status' => count($orders) > 0, 'total' => count($orders), 'data' => $orders]);
-        } catch (Exception $e) {
-            return response()->json(['status' => false, 'code' => $e->getCode(), 'message' => $e->getMessage()], 500);
-        }
-    }
-    public function getOrderDetails(Order $order)
-    {
-        return response()->json([
-            'success' => true,
-            'message' => 'Order details fetched successfully.',
-            'order' => new OrderResource($order->load([
-                'pharmacy',
-                'orderDetails.medicine',
-                'orderDetails.unit'
-            ]))
-        ], 200);
-    }
 }
